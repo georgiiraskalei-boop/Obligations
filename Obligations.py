@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import numpy as np
 import cv2
+import re
 
 # Objects
 reader=easyocr.Reader(['uk','ru','en'])
@@ -65,9 +66,18 @@ def to_json(cleaned_data):
 
 def work_with_json(way_to_json):
     with open (way_to_json, "r", encoding="utf-8") as file_to_parsing:
-        for line in file_to_parsing:
-            if"UA" in line:
-                print(line)
+        data = json.load(file_to_parsing)
+        for item in data:
+            if isinstance(item, str):
+                if "UA" in item:
+                    print(item)
+                elif "шт" in item.lower():
+                    print("Количество: ", item)
+            elif isinstance(item, float):
+                s = str(item)
+                parts = s.split(".")
+                if len(parts[0]) >= 4 and len(parts[1]) == 2:
+                    print("Сумма:", item) 
 
 def main():
     true_way = take_data()         
