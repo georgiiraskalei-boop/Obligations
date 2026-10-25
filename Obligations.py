@@ -61,10 +61,19 @@ def to_json(cleaned_data):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(cleaned_data, f, ensure_ascii=False, indent=4)
     print(f"Данные успешно упакованы в {file_path}")
+    return(file_path)
+
+def work_with_json(way_to_json):
+    with open (way_to_json, "r", encoding="utf-8") as file_to_parsing:
+        for line in file_to_parsing:
+            if"UA" in line:
+                print(line)
+
 def main():
     true_way = take_data()         
     results = to_txt(true_way)     
     cleaned_data=normalization_of_results(results) 
-    our_format=to_json(cleaned_data)
+    way_to_json=to_json(cleaned_data)
+    cleanJson=work_with_json(way_to_json)
 if __name__=="__main__": 
     main()    
