@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import cv2
 import re
-
+from datetime import datetime
 # Objects
 reader=easyocr.Reader(['uk','ru','en'])
 
@@ -64,8 +64,11 @@ def to_json(cleaned_data):
     print(f"Данные успешно упакованы в {file_path}")
     return(file_path)
 
+#    Достаем из файла нужные значения
+
 def work_with_json(way_to_json):
-    with open (way_to_json, "r", encoding="utf-8") as file_to_parsing:
+    date_list = []
+    with open(way_to_json, "r", encoding="utf-8") as file_to_parsing:
         data = json.load(file_to_parsing)
         for item in data:
             if isinstance(item, str):
@@ -73,12 +76,27 @@ def work_with_json(way_to_json):
                     print(item)
                 elif "шт" in item.lower():
                     print("Количество: ", item)
+                
+                # Сбор дат пишем прямо здесь, внутри общей проверки на строку
+                for word in item.split():
+                    clean_word = word.strip(".,/;")
+                    if len(clean_word) == 10 and clean_word.count(".") == 2:
+                        try:
+                            parsed_date = datetime.strptime(clean_word, "%d.%m.%Y")
+                            date_list.append(parsed_date)
+                        except ValueError:
+                            continue
+                            
             elif isinstance(item, float):
                 s = str(item)
                 parts = s.split(".")
                 if len(parts[0]) >= 4 and len(parts[1]) == 2:
-                    print("Сумма:", item) 
+                    print("Сумма:", item)
 
+    # Итоговый поиск максимума строго после завершения цикла
+    if date_list:
+        maturity_date = max(date_list)
+        print("Дата погашения:", maturity_date.strftime("%d.%m.%Y"))
 def main():
     true_way = take_data()         
     results = to_txt(true_way)     
