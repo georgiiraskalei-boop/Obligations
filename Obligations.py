@@ -68,14 +68,21 @@ def to_json(cleaned_data):
 
 def work_with_json(way_to_json):
     date_list = []
+    cupon_date_list=[]
+    ovdp=None
+    ovdp_count=None
+    final_date=None
+    total_sum=None
     with open(way_to_json, "r", encoding="utf-8") as file_to_parsing:
         data = json.load(file_to_parsing)
         for item in data:
             if isinstance(item, str):
                 if "UA" in item:
-                    print(item)
+                    ovdp=item
+                    print(ovdp)
                 elif "шт" in item.lower():
-                    print("Количество: ", item)
+                    ovdp_count=item
+                    print("Количество: ", ovdp_count)
                 
                 # Сбор дат пишем прямо здесь, внутри общей проверки на строку
                 for word in item.split():
@@ -91,12 +98,20 @@ def work_with_json(way_to_json):
                 s = str(item)
                 parts = s.split(".")
                 if len(parts[0]) >= 4 and len(parts[1]) == 2:
-                    print("Сумма:", item)
+                    total_sum=item
+                    print("Сумма:", total_sum)
 
     # Итоговый поиск максимума строго после завершения цикла
     if date_list:
         maturity_date = max(date_list)
-        print("Дата погашения:", maturity_date.strftime("%d.%m.%Y"))
+        final_date=max(date_list)
+        print("Дата погашения:", final_date.strftime("%d.%m.%Y"))
+    for date in date_list:
+        if date != final_date:
+            cupon_date_list.append(date)
+    formatted_coupon_dates = [d.strftime("%d.%m.%Y") for d in cupon_date_list]
+    print(formatted_coupon_dates)           
+       
 def main():
     true_way = take_data()         
     results = to_txt(true_way)     
