@@ -35,21 +35,37 @@ class work_with_json:
      def __init__(self, results):
           self.results=results
           self.data={}
+
      def ovdp(self):
-          fovdp='OVDP'
+        fovdp = 'OVDP'
+        for line in self.results:
+            if 'ОВДП' in line:
+                words = line.split()
+                for word in words:
+                    if word.startswith('UA'):
+                        self.data[fovdp] = word
+                        break
+                       
+        return self.data
+     
+     def procent(self):
+          procent='PROCENT'
           for line in self.results:
-               if 'ОВДП' in line:
-                    self.data[fovdp]=line
-                    print(self.data)
-                    return(self.data)
-     def total_sum(self):
-          pass                    
+               if '%' in line:
+                    words=line.split()
+                    for word in words:
+                        if '%' in word:
+                             clean_word=word.replace('%','')
+                             self.data[procent]=clean_word
+                             print(self.data)
+                             break
+          return self.data                  
                     
 def main():
     true_way=take_data()
     results=to_json(true_way)
     processor=work_with_json(results)
     processor.ovdp()
-    processor.total_sum()
+    processor.procent()
 if __name__=='__main__':
      main()    
