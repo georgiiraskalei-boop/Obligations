@@ -18,36 +18,36 @@ def take_data():
                 return(way)
             else:
                  print('Wrong way')
-def to_txt(true_way):
+
+def to_json(true_way):
     img = cv2.imdecode(np.fromfile(str(true_way), dtype=np.uint8), cv2.IMREAD_COLOR)
     results = reader.readtext(img, detail=0)
-    with open("raw_text.txt", "w", encoding="utf-8") as workfile:
-        for line in results:
-            workfile.write(line + "\n")
+    
+    with open("raw_text.json", "w", encoding="utf-8") as workfile:
+        json.dump(results, workfile, ensure_ascii=False, indent=4)
+        
     print(results)
-    return(results)                   
+    return results 
+
+class work_with_json:
+     def __init__(self, results):
+          self.results=results
+          self.data={}
+     def ovdp(self):
+          fovdp='OVDP'
+          for line in self.results:
+               if 'ОВДП' in line:
+                    self.data[fovdp]=line
+                    print(self.data)
+                    return(self.data)
+     def total_sum(self):
+          pass                    
                     
-
-
-
-# TODO: Шаг 3. Написать блок выгрузки сырого текста:
-# открыть картинку, прогнать через OCR без фильтрации 
-# и записать результат построчно в промежуточный .txt файл
-
-
-# TODO: Шаг 4. Написать функцию нормализации значений:
-# принимать строку, проверять наличие точки, 
-# если копеек нет — добивать '.00', возвращать нормализованное значение
-
-
-# TODO: Шаг 5. Написать логику построчного парсинга:
-# открыть созданный .txt файл, запустить цикл по строкам, 
-# применять функцию нормализации и отбирать нужные данные
-
-
-# TODO: Шаг 6. Упаковать очищенные и структурированные данные в JSON-файл
 def main():
     true_way=take_data()
-    to_txt(true_way)
+    results=to_json(true_way)
+    processor=work_with_json(results)
+    processor.ovdp()
+    processor.total_sum()
 if __name__=="__main__": 
     main()    
