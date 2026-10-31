@@ -35,6 +35,7 @@ class work_with_json:
      def __init__(self, results):
           self.results=results
           self.data={}
+          self.all_dates=[]
 
      def ovdp(self):
         fovdp = 'OVDP'
@@ -57,15 +58,61 @@ class work_with_json:
                         if '%' in word:
                              clean_word=word.replace('%','')
                              self.data[procent]=clean_word
-                             print(self.data)
                              break
-          return self.data                  
-                    
+          return self.data
+
+     def count(self):
+        fcount = 'COUNT'
+        for line in self.results:
+            if 'шт' in line.lower() and line.strip(' .,:').lower().endswith('шт'):
+            # Очищаем строку от 'шт' и лишних пробелов
+                cleaned = line.lower().replace('шт', '').strip()
+                self.data[fcount] = cleaned
+                break
+        return self.data
+
+     def buy_sum(self):
+        bsum = 'SUM OF BUY'
+        for line in self.results:
+            cleaned_line = line.strip(' ,.')
+            if len(cleaned_line) >= 7 and cleaned_line.endswith('UAH'):
+                try:
+                    # Сначала убираем 'UAH' и сохраняем в новую переменную, затем парсим
+                    num_str = cleaned_line.replace('UAH', '').strip()
+                    val = float(num_str)
+                    self.data[bsum] = val
+                    print(self.data)
+                    return self.data
+                except ValueError:
+                    continue
+        return self.data
+
+     def dates(self):
+         date_format = r'\d{2}[.,]\d{2}[.,]\d{4}'
+         for line in self.results:
+             # Заменяем запятые на точки, чтобы OCR-мусор не ломал поиск
+             cleaned_line = line.replace(',', '.')
+             found = re.findall(date_format, cleaned_line)
+             self.all_dates.extend(found)
+             
+         if not self.all_dates:
+            return None
+            
+         print(self.all_dates)
+         return self.all_dates
+
+             
+
+     
+     
 def main():
     true_way=take_data()
     results=to_json(true_way)
     processor=work_with_json(results)
     processor.ovdp()
     processor.procent()
+    processor.count()
+    processor.buy_sum()
+    processor.dates()
 if __name__=='__main__':
      main()    
