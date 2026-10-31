@@ -114,5 +114,6 @@ def main():
     processor.count()
     processor.buy_sum()
     processor.dates()
+    input("\nНажми Enter, чтобы закрыть программу...")
 if __name__=='__main__':
      main()    
