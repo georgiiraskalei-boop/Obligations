@@ -7,6 +7,7 @@ import cv2
 import re
 from datetime import datetime
 from statistics import mode, StatisticsError
+from collections import Counter
 # Objects
 reader=easyocr.Reader(['uk','ru','en'])
 
@@ -27,8 +28,6 @@ def to_json(true_way):
     
     with open("raw_text.json", "w", encoding="utf-8") as workfile:
         json.dump(results, workfile, ensure_ascii=False, indent=4)
-        
-    print(results)
     return results 
 
 class work_with_json:
@@ -81,7 +80,6 @@ class work_with_json:
                     num_str = cleaned_line.replace('UAH', '').strip()
                     val = float(num_str)
                     self.data[bsum] = val
-                    print(self.data)
                     return self.data
                 except ValueError:
                     continue
@@ -97,14 +95,48 @@ class work_with_json:
              
          if not self.all_dates:
             return None
-            
-         print(self.all_dates)
          return self.all_dates
 
-             
+     def final_dates(self):
+        date_format = []
+        fdata = "FINAL DATE"
+        for date_str in self.all_dates: 
+            parsed_date = datetime.strptime(date_str, '%d.%m.%Y') 
+            date_format.append(parsed_date)    
+        finall_date = max(date_format)
+        self.data[fdata] = finall_date.strftime('%d.%m.%Y') 
+        return self.data
+     
+     def cupon_dates(self):
+         cdata = "COUPON DATES"
+         # Парсим строки в datetime, чтобы убрать дубли и отсортировать по хронологии, а не по строкам
+         parsed_dates = [datetime.strptime(d, '%d.%m.%Y') for d in self.all_dates]
+         unique_dates = sorted(list(set(parsed_dates)))
+         
+         # Переводим обратно в читаемый строковый формат для словаря
+         self.data[cdata] = [d.strftime('%d.%m.%Y') for d in unique_dates]
+         return self.data
 
-     
-     
+     def cupon_body(self):
+        pattern = r'\d+[\.,]\d{2}'
+        all_amounts = []
+        for line in self.results:
+            found = re.findall(pattern, line)
+            all_amounts.extend(found)
+        if not all_amounts:
+            return None
+        counter = Counter(all_amounts)
+        most_common_amount, _ = counter.most_common(1)[0]
+        self.data["COUPON"] = most_common_amount
+        print(self.data)
+        return self.data                 
+        
+class Finance_Analyzer():
+    def __init__(self, data):
+        self.data = data
+    def all_cupons(self):
+        print(self)
+
 def main():
     true_way=take_data()
     results=to_json(true_way)
@@ -114,6 +146,12 @@ def main():
     processor.count()
     processor.buy_sum()
     processor.dates()
+    processor.final_dates()
+    processor.cupon_dates()
+    processor.cupon_body()
+    analyzer = Finance_Analyzer(processor.data)
+    analyzer.all_cupons()
+    
     input("\nНажми Enter, чтобы закрыть программу...")
 if __name__=='__main__':
      main()    
