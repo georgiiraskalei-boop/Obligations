@@ -147,8 +147,39 @@ class Finance_Analyzer():
         count_val = int(self.data['COUNT'])
         breturn = count_val * ukr_nominal
         self.data['TOTAL RETURN SUM'] = float(breturn)  
+        return self.data
+    
+    def calculate_time_to_maturity(self):
+        date_str = self.data['FINAL DATE']
+        final_date = datetime.strptime(date_str, '%d.%m.%Y')
+        current_date = datetime.now()
+        total_days = (final_date - current_date).days
+        if total_days < 0:
+            total_days = 0
+        years = total_days // 365
+        remaining_days = total_days % 365
+        months = remaining_days // 30 
+        self.data['MATURITY PERIOD'] = f"{years} лет, {months} мес."
+        return self.data
+
+    def matuarity_per_year(self):
+        date_str = self.data['FINAL DATE']
+        final_date = datetime.strptime(date_str, '%d.%m.%Y')
+        current_date = datetime.now()
+        total_days = (final_date - current_date).days
+        if total_days <= 0:
+            years = 1 
+        else:
+            years = total_days / 365.25 
+        total_coupon = float(self.data['TOTAL COPON SUM'])
+        annual_income = total_coupon / years
+        self.data['ANNUAL COUPON INCOME'] = round(annual_income, 2)
         print(self.data)
         return self.data
+
+class PortfolioAgregator():
+    def __init__(self, data): 
+        self.data=data       
       
 
 def main():
@@ -166,7 +197,8 @@ def main():
     analyzer = Finance_Analyzer(processor.data)
     analyzer.all_cupons()
     analyzer.body_return()
-    
+    analyzer.calculate_time_to_maturity()
+    analyzer.matuarity_per_year()
     input("\nНажми Enter, чтобы закрыть программу...")
 if __name__=='__main__':
      main()    
