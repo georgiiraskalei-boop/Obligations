@@ -146,7 +146,7 @@ class Finance_Analyzer():
         ukr_nominal = 1000
         count_val = int(self.data['COUNT'])
         breturn = count_val * ukr_nominal
-        self.data['TOTAL RETURN SUM'] = float(breturn)  # можно оставить float для единообразия в отчетах
+        self.data['TOTAL RETURN SUM'] = float(breturn)  
         print(self.data)
         return self.data
       
