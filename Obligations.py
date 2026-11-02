@@ -128,14 +128,28 @@ class work_with_json:
         counter = Counter(all_amounts)
         most_common_amount, _ = counter.most_common(1)[0]
         self.data["COUPON"] = most_common_amount
-        print(self.data)
         return self.data                 
         
 class Finance_Analyzer():
     def __init__(self, data):
         self.data = data
+
     def all_cupons(self):
-        print(self)
+        cupon_dates_count = float( len(self.data['COUPON DATES']))
+        cupon_body= float(self.data['COUPON'])
+        cupon_count= float(self.data['COUNT'])
+        cupon_tot_sum= float(cupon_dates_count*cupon_body*cupon_count)
+        self.data['TOTAL COPON SUM']=cupon_tot_sum
+        return(self.data)
+    
+    def body_return(self):
+        ukr_nominal = 1000
+        count_val = int(self.data['COUNT'])
+        breturn = count_val * ukr_nominal
+        self.data['TOTAL RETURN SUM'] = float(breturn)  # можно оставить float для единообразия в отчетах
+        print(self.data)
+        return self.data
+      
 
 def main():
     true_way=take_data()
@@ -151,6 +165,7 @@ def main():
     processor.cupon_body()
     analyzer = Finance_Analyzer(processor.data)
     analyzer.all_cupons()
+    analyzer.body_return()
     
     input("\nНажми Enter, чтобы закрыть программу...")
 if __name__=='__main__':
