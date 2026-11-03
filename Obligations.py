@@ -233,7 +233,6 @@ def parse_single_bond():
     analyzer.body_return()
     analyzer.calculate_time_to_maturity()
     analyzer.matuarity_per_year()
-    print (analyzer.data)
     return analyzer.data
 
 def main():
