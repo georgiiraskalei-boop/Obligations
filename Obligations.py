@@ -1,12 +1,10 @@
 # TODO: Шаг 1. Импортировать нужные библиотеки (easyocr)
 import easyocr
-import json
 from pathlib import Path
 import numpy as np
 import cv2
 import re
 from datetime import datetime
-from statistics import mode, StatisticsError
 from collections import Counter
 # Objects
 reader=easyocr.Reader(['uk','ru','en'])
