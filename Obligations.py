@@ -70,12 +70,15 @@ class work_with_json:
             for line in self.results:
                 if 'шт' in line.lower() and line.strip(' .,:').lower().endswith('шт'):
                     cleaned = line.lower().replace('шт', '').strip()
+                    # ЗАЩИТА: если OCR распознал единицу как букву 'l' или 'I', исправляем на '1'
+                    if cleaned in ['l', 'i', 'I']:
+                        cleaned = '1'
                     self.data[fcount] = cleaned
                     break
         except Exception as e:
             print(f"[Ошибка в функции count]: {e}")
         return self.data
-
+     
      def buy_sum(self):
         try:
             bsum = 'SUM OF BUY'

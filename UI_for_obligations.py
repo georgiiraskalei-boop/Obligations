@@ -41,6 +41,100 @@ def process_image_file(image_path: Path) -> dict:
     return analyzer.data
 
 
+class EditBondWindow(ctk.CTkToplevel):
+    """Модальное окно для ручного редактирования всех полей облигации"""
+    def __init__(self, parent, bond_data: dict, on_save_callback):
+        super().__init__(parent)
+        self.title("Редактирование облигации")
+        self.geometry("500x650")
+        self.resizable(False, False)
+
+        self.bond_data = bond_data
+        self.on_save_callback = on_save_callback
+
+        # Поверх главного окна
+        self.transient(parent)
+        self.grab_set()
+
+        self._build_widgets()
+
+    def _build_widgets(self):
+        lbl = ctk.CTkLabel(
+            self, text="✏️ Редактирование параметров", font=ctk.CTkFont(size=18, weight="bold")
+        )
+        lbl.pack(pady=15)
+
+        self.scroll_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        self.scroll_frame.pack(fill="both", expand=True, padx=20, pady=(0, 15))
+
+        self.entries = {}
+
+        fields = [
+            ("OVDP", "Код ОВДП (ISIN):"),
+            ("PROCENT", "Процентная ставка (%):"),
+            ("COUNT", "Количество (шт):"),
+            ("SUM OF BUY", "Сумма покупки (₴):"),
+            ("FINAL DATE", "Дата погашения (ДД.ММ.ГГГГ):"),
+            ("COUPON", "Размер 1 купона (₴):"),
+        ]
+
+        for key, title in fields:
+            box = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
+            box.pack(fill="x", pady=6)
+
+            ctk.CTkLabel(box, text=title, font=ctk.CTkFont(size=12)).pack(anchor="w")
+            
+            val = str(self.bond_data.get(key, ""))
+            entry = ctk.CTkEntry(box, placeholder_text=title)
+            entry.insert(0, val)
+            entry.pack(fill="x", pady=(2, 0))
+
+            self.entries[key] = entry
+
+        # Кнопка Сохранить
+        btn_save = ctk.CTkButton(
+            self,
+            text="💾 Сохранить изменения",
+            fg_color="#27AE60",
+            hover_color="#219150",
+            command=self.save
+        )
+        btn_save.pack(pady=15)
+
+    def save(self):
+        # Обновляем базовые значения из текстовых полей
+        self.bond_data["OVDP"] = self.entries["OVDP"].get().strip()
+        self.bond_data["PROCENT"] = self.entries["PROCENT"].get().strip()
+        
+        raw_count = self.entries["COUNT"].get().strip()
+        if raw_count.lower() in ['l', 'i', 'I']:
+            raw_count = '1'
+        self.bond_data["COUNT"] = raw_count
+
+        try:
+            self.bond_data["SUM OF BUY"] = float(self.entries["SUM OF BUY"].get().strip())
+        except ValueError:
+            self.bond_data["SUM OF BUY"] = 0.0
+
+        self.bond_data["FINAL DATE"] = self.entries["FINAL DATE"].get().strip()
+        self.bond_data["COUPON"] = self.entries["COUPON"].get().strip()
+
+        # Пересчитываем аналитику с обновленными полями
+        try:
+            analyzer = Finance_Analyzer(self.bond_data)
+            analyzer.all_cupons()
+            analyzer.body_return()
+            analyzer.calculate_time_to_maturity()
+            analyzer.matuarity_per_year()
+            self.bond_data = analyzer.data
+        except Exception as e:
+            print(f"[Ошибка перерасчета при изменении]: {e}")
+
+        # Вызываем колбэк родителя для сохранения на диск и обновления UI
+        self.on_save_callback(self.bond_data)
+        self.destroy()
+
+
 class BondPortfolioApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -181,7 +275,6 @@ class BondPortfolioApp(ctk.CTk):
         if not file_paths:
             return
 
-        # Проходим циклом по всем выбранным путям пачкой
         for file_path in file_paths:
             image_path = Path(file_path)
             new_data = process_image_file(image_path)
@@ -189,9 +282,20 @@ class BondPortfolioApp(ctk.CTk):
             if new_data:
                 self.t_list.append(new_data)
 
-        # Сохраняем и обновляем UI один раз после обработки всех картинок
         self.save_data()
         self.refresh_ui()
+
+    def edit_bond(self, original_index: int):
+        """Открытие модального окна для редактирования выбранной записи"""
+        if 0 <= original_index < len(self.t_list):
+            bond_data = self.t_list[original_index]
+
+            def on_save(updated_data):
+                self.t_list[original_index] = updated_data
+                self.save_data()
+                self.refresh_ui()
+
+            EditBondWindow(self, bond_data, on_save)
 
     def delete_bond(self, original_index: int):
         """Удаление облигации по её оригинальному индексу"""
@@ -207,7 +311,7 @@ class BondPortfolioApp(ctk.CTk):
         self._render_bond_cards()
 
     def _update_metrics(self):
-        """Расчет и обновление тоталов, годового купона и безопасного снятия (3%)"""
+        """Расчет и обновление тоталов с безопасным приведением типов"""
         tot_buy = 0.0
         tot_coupon = 0.0
         tot_annual_coupon = 0.0
@@ -215,11 +319,32 @@ class BondPortfolioApp(ctk.CTk):
         tot_count = 0
 
         for bond in self.t_list:
-            tot_buy += float(bond.get('SUM OF BUY', 0.0))
-            tot_coupon += float(bond.get('TOTAL COPON SUM', 0.0))
-            tot_annual_coupon += float(bond.get('ANNUAL COUPON INCOME', 0.0))
-            tot_return += float(bond.get('TOTAL RETURN SUM', 0.0))
-            tot_count += int(bond.get('COUNT', 0))
+            try:
+                tot_buy += float(bond.get('SUM OF BUY', 0.0))
+            except (ValueError, TypeError):
+                pass
+
+            try:
+                tot_coupon += float(bond.get('TOTAL COPON SUM', 0.0))
+            except (ValueError, TypeError):
+                pass
+
+            try:
+                tot_annual_coupon += float(bond.get('ANNUAL COUPON INCOME', 0.0))
+            except (ValueError, TypeError):
+                pass
+
+            try:
+                tot_return += float(bond.get('TOTAL RETURN SUM', 0.0))
+            except (ValueError, TypeError):
+                pass
+
+            raw_count = bond.get('COUNT', 0)
+            try:
+                tot_count += int(raw_count)
+            except (ValueError, TypeError):
+                if str(raw_count).lower() in ['l', 'i', 'I']:
+                    tot_count += 1
 
         safe_withdrawal = tot_buy * 0.03
 
@@ -231,7 +356,7 @@ class BondPortfolioApp(ctk.CTk):
         self.lbl_safe_withdrawal_val.configure(text=f"{safe_withdrawal:,.2f} ₴")
 
     def _render_bond_cards(self):
-        """Отрисовка карточек с кнопками удаления"""
+        """Отрисовка карточек с кнопками редактирования и удаления"""
         for widget in self.scroll_frame.winfo_children():
             widget.destroy()
 
@@ -277,6 +402,20 @@ class BondPortfolioApp(ctk.CTk):
         )
         badge_proc.pack(side="left", padx=(0, 10))
 
+        # Кнопка Редактировать
+        btn_edit = ctk.CTkButton(
+            right_box,
+            text="✏️ Изменить",
+            width=80,
+            height=24,
+            fg_color="#D35400",
+            hover_color="#E67E22",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            command=lambda idx=orig_idx: self.edit_bond(idx)
+        )
+        btn_edit.pack(side="left", padx=(0, 5))
+
+        # Кнопка Удалить
         btn_del = ctk.CTkButton(
             right_box,
             text="🗑 Удалить",
@@ -295,9 +434,15 @@ class BondPortfolioApp(ctk.CTk):
         grid_frame = ctk.CTkFrame(card, fg_color="transparent")
         grid_frame.pack(fill="x", padx=15, pady=(5, 10))
 
+        # Показ суммы покупки с защитой от ошибок
+        try:
+            sum_buy_val = f"{float(bond.get('SUM OF BUY', 0.0)):,.2f} ₴"
+        except (ValueError, TypeError):
+            sum_buy_val = f"{bond.get('SUM OF BUY', 0.0)} ₴"
+
         fields = [
             ("Количество:", f"{bond.get('COUNT', 0)} шт"),
-            ("Покупка:", f"{float(bond.get('SUM OF BUY', 0.0)):,.2f} ₴"),
+            ("Покупка:", sum_buy_val),
             ("Купон (всего):", f"{float(bond.get('TOTAL COPON SUM', 0.0)):,.2f} ₴"),
             ("Купон в год:", f"{float(bond.get('ANNUAL COUPON INCOME', 0.0)):,.2f} ₴"),
             ("Возврат:", f"{float(bond.get('TOTAL RETURN SUM', 0.0)):,.2f} ₴"),
