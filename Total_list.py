@@ -1,5 +1,6 @@
 from Obligations import parse_single_bond
 from pathlib import Path
+from datetime import datetime
 import json
 
 # Глобальный список для накопления
@@ -14,6 +15,26 @@ if file_path.is_file():
     except Exception:
         t_list = []
 
+def remove_expired_bonds(bonds_list):
+    """Фильтрует список, удаляя облигации с истекшим сроком погашения."""
+    current_date = datetime.now()
+    active_bonds = []
+    
+    for bond in bonds_list:
+        date_str = bond.get('FINAL DATE')
+        if date_str:
+            try:
+                final_date = datetime.strptime(date_str, '%d.%m.%Y')
+                # Если финальная дата больше или равна текущей — бумага активна
+                if final_date >= current_date:
+                    active_bonds.append(bond)
+            except ValueError:
+                # Если вдруг формат даты поврежден, оставляем бумагу на всякий случай
+                active_bonds.append(bond)
+        else:
+            active_bonds.append(bond)
+            
+    return active_bonds
 class Total:
     def __init__(self):
         # Получаем свежую бумагу через твой парсер

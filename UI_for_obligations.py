@@ -446,7 +446,8 @@ class BondPortfolioApp(ctk.CTk):
             ("Купон (всего):", f"{float(bond.get('TOTAL COPON SUM', 0.0)):,.2f} ₴"),
             ("Купон в год:", f"{float(bond.get('ANNUAL COUPON INCOME', 0.0)):,.2f} ₴"),
             ("Возврат:", f"{float(bond.get('TOTAL RETURN SUM', 0.0)):,.2f} ₴"),
-            ("Погашение:", bond.get('FINAL DATE', '-'))
+            ("Погашение:", bond.get('FINAL DATE', '-')),
+            ("Остаток срока:", bond.get('MATURITY PERIOD', '-'))
         ]
 
         for idx, (label, val) in enumerate(fields):
