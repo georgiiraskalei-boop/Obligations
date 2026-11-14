@@ -9,7 +9,6 @@ from collections import Counter
 # Objects
 reader=easyocr.Reader(['uk','ru','en'])
 
-# TODO: Шаг 2. Инициализировать ридер для работы с картинкой
 def take_data():
         while True:   
             way=input('Print way:') 
