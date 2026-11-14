@@ -158,15 +158,24 @@ class Finance_Analyzer:
 
     def all_cupons(self):
         try:
-            cupon_dates_count = float(len(self.data.get('COUPON DATES', [])))
+            # Если общая сумма купонов уже есть и она не нулевая (например, подгружена из БД), берем её и не обнуляем
+            existing_sum = float(self.data.get('TOTAL COPON SUM', 0.0))
+            if existing_sum > 0:
+                return self.data
+
+            # Иначе считаем заново
+            dates = self.data.get('COUPON DATES', [])
             cupon_body = float(self.data.get('COUPON', 0))
             cupon_count = float(self.data.get('COUNT', 1))
-            cupon_tot_sum = float(cupon_dates_count * cupon_body * cupon_count)
-            self.data['TOTAL COPON SUM'] = cupon_tot_sum
+            
+            if dates:
+                cupon_dates_count = float(len(dates))
+                self.data['TOTAL COPON SUM'] = float(cupon_dates_count * cupon_body * cupon_count)
+            else:
+                self.data['TOTAL COPON SUM'] = float(cupon_body * cupon_count)
         except Exception as e:
             print(f"[Ошибка в Finance_Analyzer.all_cupons]: {e}")
         return self.data
-    
     def body_return(self):
         try:
             ukr_nominal = 1000

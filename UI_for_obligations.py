@@ -152,15 +152,36 @@ class BondPortfolioApp(ctk.CTk):
         self.header_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.header_frame.pack(fill="x", padx=20, pady=(20, 10))
 
+        title_box = ctk.CTkFrame(self.header_frame, fg_color="transparent")
+        title_box.pack(side="left")
+
         title_label = ctk.CTkLabel(
-            self.header_frame,
+            title_box,
             text="💼 Портфель Облигаций",
             font=ctk.CTkFont(size=24, weight="bold")
         )
-        title_label.pack(side="left")
+        title_label.pack(anchor="w")
+
+        self.lbl_db_status = ctk.CTkLabel(
+            title_box,
+            text=f"БД: {self.portfolio.db_path.name}",
+            font=ctk.CTkFont(size=11),
+            text_color="#A0A0AB"
+        )
+        self.lbl_db_status.pack(anchor="w")
 
         btn_box = ctk.CTkFrame(self.header_frame, fg_color="transparent")
         btn_box.pack(side="right")
+
+        self.btn_select_db = ctk.CTkButton(
+            btn_box,
+            text="📂 Выбрать БД",
+            width=120,
+            fg_color="#2980B9",
+            hover_color="#2471A3",
+            command=self.select_database_file
+        )
+        self.btn_select_db.pack(side="left", padx=(0, 10))
 
         self.btn_add = ctk.CTkButton(
             btn_box,
@@ -179,6 +200,19 @@ class BondPortfolioApp(ctk.CTk):
             command=self.refresh_ui
         )
         self.btn_reload.pack(side="left")
+
+    def select_database_file(self):
+        """Выбор существующего файла базы данных SQLite через проводник"""
+        file_path = filedialog.askopenfilename(
+            title="Выберите файл базы данных SQLite",
+            filetypes=[("SQLite Database", "*.db *.sqlite *.sqlite3"), ("Все файлы", "*.*")]
+        )
+        if not file_path:
+            return
+
+        self.portfolio.set_database(Path(file_path))
+        self.lbl_db_status.configure(text=f"БД: {self.portfolio.db_path}")
+        self.refresh_ui()
 
     def _build_metrics_dashboard(self):
         """Панель итоговых показателей (7 метрик в 2 ряда)"""
@@ -302,7 +336,7 @@ class BondPortfolioApp(ctk.CTk):
         if not bonds:
             empty_lbl = ctk.CTkLabel(
                 self.scroll_frame,
-                text="Список пуст. Нажмите «➕ Добавить облигации», чтобы распознать скриншоты!",
+                text="Список пуст. Нажмите «📂 Выбрать БД» или «➕ Добавить облигации»!",
                 font=ctk.CTkFont(size=14),
                 text_color="#71717A"
             )
