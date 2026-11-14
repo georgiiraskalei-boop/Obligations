@@ -276,7 +276,7 @@ class BondPortfolioApp(ctk.CTk):
 
     def refresh_ui(self):
         """Обновление интерфейса"""
-        self.portfolio.load_json()
+        self.portfolio.load_from_db()
         self._update_metrics()
         self._render_bond_cards()
 
