@@ -152,7 +152,7 @@ class work_with_json:
             print(f"[Ошибка в функции cupon_body]: {e}")
         return self.data                 
         
-class Finance_Analyzer():
+class Finance_Analyzer:
     def __init__(self, data):
         self.data = data
 
