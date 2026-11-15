@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 # По умолчанию база всегда ищется рядом с этим файлом, а не в текущей рабочей директории терминала
-DEFAULT_DB_PATH = Path(__file__).resolve().parent / "Database.db"
+DEFAULT_DB_PATH = Path(__file__).resolve().parent / "Database_for_obligations.bd"
 
 
 def remove_expired_bonds(bonds_list):
