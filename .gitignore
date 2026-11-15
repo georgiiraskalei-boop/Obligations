@@ -1,3 +1,6 @@
 total_list.json
 run_portfolio.bat
 Database.bd
+__pycache__/
+*.pyc
+Database.db
